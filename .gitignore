@@ -17,6 +17,12 @@ terraform-iac/*.tfstate.backup
 terraform-iac/.terraform.lock.hcl
 terraform-iac/terraform.tfvars
 
+
 # Ansible
 ansible/inventory.ini
 ansible/group_vars/all/vault.yml
+
+# Test scripts containing API keys
+test*.sh
+test*.py
+check_models.py
