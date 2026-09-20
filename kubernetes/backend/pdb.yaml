@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rag-agent
+  labels:
+    app.kubernetes.io/name: rag-agent
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: challenge-k8s-pro
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rag-agent
+      app.kubernetes.io/component: backend

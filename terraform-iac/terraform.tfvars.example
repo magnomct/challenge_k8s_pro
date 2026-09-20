@@ -1,0 +1,16 @@
+# Copie este arquivo para terraform.tfvars e preencha com seus dados reais.
+# terraform.tfvars NUNCA deve ser commitado (já está no .gitignore).
+
+tenancy_ocid        = "ocid1.tenancy.oc1..xxxxxxx"
+user_ocid           = "ocid1.user.oc1..xxxxxxx"
+fingerprint         = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"
+private_key_path    = "~/.oci/oci_api_key.pem"
+region              = "sa-saopaulo-1"
+compartment_ocid    = "ocid1.compartment.oc1..xxxxxxx"
+
+ssh_public_key_path  = "~/.ssh/id_rsa.pub"
+ssh_private_key_path = "~/.ssh/id_rsa"
+
+# Restrinja ao seu IP em um cenário de produção real, ex: "203.0.113.10/32"
+allowed_ssh_cidr = "0.0.0.0/0"
+allowed_app_cidr = "0.0.0.0/0"

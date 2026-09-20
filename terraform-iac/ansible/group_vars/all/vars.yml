@@ -1,0 +1,4 @@
+project_dir: /home/ubuntu/rag_agent
+app_port: 8501
+postgres_db: rag_agent
+postgres_user: rag_app

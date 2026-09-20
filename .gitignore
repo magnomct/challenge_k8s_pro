@@ -1,0 +1,17 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+indice_faiss/
+secrets/*.txt
+
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# Ansible
+ansible/inventory.ini
+ansible/group_vars/all/vault.yml

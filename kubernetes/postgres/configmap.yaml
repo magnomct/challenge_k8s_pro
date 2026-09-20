@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rag-agent-config
+  labels:
+    app.kubernetes.io/part-of: challenge-k8s-pro
+data:
+  postgres-host: "postgres"
+  postgres-port: "5432"
+  postgres-user: "rag_app"
+  postgres-db: "rag_agent"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  labels:
+    app.kubernetes.io/part-of: challenge-k8s-pro
+data:
+  01_criar_tabela.sql: |
+    -- Executado automaticamente pelo Postgres apenas na PRIMEIRA inicialização
+    -- do volume. Se o volume já existir, este script é ignorado.
+    CREATE TABLE IF NOT EXISTS interacoes (
+        id                 SERIAL PRIMARY KEY,
+        documento          VARCHAR(255),
+        pergunta           TEXT NOT NULL,
+        resposta           TEXT NOT NULL,
+        dentro_do_escopo   BOOLEAN NOT NULL,
+        melhor_distancia   REAL,
+        fontes             TEXT,
+        criado_em          TIMESTAMP NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_criado_em ON interacoes (criado_em);
+    CREATE INDEX IF NOT EXISTS idx_escopo ON interacoes (dentro_do_escopo);

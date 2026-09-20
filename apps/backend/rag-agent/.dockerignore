@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+indice_faiss/
+secrets/*.txt
+.env
+terraform/
+*.md
