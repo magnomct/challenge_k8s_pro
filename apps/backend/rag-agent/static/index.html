@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Santo Pegasus | RAG Agent AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="brand">
+                <div class="logo-icon"><i class="fa-solid fa-robot"></i></div>
+                <h1>Santo Pegasus</h1>
+                <span class="badge">v2.0</span>
+            </div>
+            
+            <ul class="nav-links">
+                <li class="active" data-view="chat-view">
+                    <i class="fa-solid fa-message"></i>
+                    <span>Chat RAG</span>
+                </li>
+                <li data-view="dashboard-view">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </li>
+            </ul>
+            
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span id="api-status">Conectando...</span>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- View: Chat -->
+            <section id="chat-view" class="view-section active">
+                <header class="view-header">
+                    <h2>Assistente Documental</h2>
+                    <p>Faça perguntas baseadas em documentos internos.</p>
+                </header>
+
+                <div class="upload-section glass-panel">
+                    <div class="upload-area" id="drop-zone">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <h3>Carregar Documento</h3>
+                        <p>Arraste um PDF ou clique para selecionar</p>
+                        <input type="file" id="file-input" accept="application/pdf" hidden>
+                        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Procurar Arquivo</button>
+                    </div>
+                    <div class="upload-status" id="upload-status" style="display: none;">
+                        <div class="spinner"></div>
+                        <span id="upload-status-text">Processando documento...</span>
+                    </div>
+                    <div class="active-document" id="active-document" style="display: none;">
+                        <div class="doc-icon"><i class="fa-solid fa-file-check"></i></div>
+                        <div class="doc-info">
+                            <h4 id="doc-name">documento.pdf</h4>
+                            <p id="doc-meta">Indexado com sucesso</p>
+                        </div>
+                        <button class="btn btn-icon" id="btn-remove-doc" title="Remover"><i class="fa-solid fa-times"></i></button>
+                    </div>
+                </div>
+
+                <div class="chat-container glass-panel">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message system">
+                            <div class="message-content">
+                                Olá! Sou o agente RAG Santo Pegasus. Carregue um documento PDF acima para começarmos.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Faça uma pergunta sobre o documento..." disabled>
+                        <button class="btn btn-primary" id="btn-send" disabled>
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Dashboard History -->
+            <section id="dashboard-view" class="view-section">
+                <header class="view-header">
+                    <h2>Dashboard de Performance</h2>
+                    <p>Análise de histórico e acurácia do agente.</p>
+                </header>
+
+                <div class="dashboard-grid">
+                    <!-- Stats Cards -->
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon"><i class="fa-solid fa-clipboard-question"></i></div>
+                        <div class="stat-content">
+                            <h3>Total de Consultas</h3>
+                            <div class="stat-value" id="stat-total">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon success"><i class="fa-solid fa-check-circle"></i></div>
+                        <div class="stat-content">
+                            <h3>No Escopo</h3>
+                            <div class="stat-value" id="stat-in-scope">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card glass-panel">
+                        <div class="stat-icon warning"><i class="fa-solid fa-ban"></i></div>
+                        <div class="stat-content">
+                            <h3>Fora do Escopo</h3>
+                            <div class="stat-value" id="stat-out-scope">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card glass-panel primary-glow">
+                        <div class="stat-icon primary"><i class="fa-solid fa-bullseye"></i></div>
+                        <div class="stat-content">
+                            <h3>Acurácia (Escopo)</h3>
+                            <div class="stat-value" id="stat-accuracy">--%</div>
+                        </div>
+                    </div>
+
+                    <!-- Chart -->
+                    <div class="chart-container glass-panel span-full">
+                        <h3>Consultas Diárias por Escopo</h3>
+                        <div class="canvas-wrapper">
+                            <canvas id="historyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- History Table -->
+                    <div class="history-table-container glass-panel span-full">
+                        <div class="table-header">
+                            <h3>Últimas Interações</h3>
+                            <button class="btn btn-secondary btn-sm" id="btn-refresh-history">
+                                <i class="fa-solid fa-sync"></i> Atualizar
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Documento</th>
+                                        <th>Pergunta</th>
+                                        <th>Status</th>
+                                        <th>Distância</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal for viewing full interaction -->
+    <div class="modal-overlay" id="interaction-modal">
+        <div class="modal glass-panel">
+            <header class="modal-header">
+                <h3>Detalhes da Interação</h3>
+                <button class="btn btn-icon close-modal"><i class="fa-solid fa-times"></i></button>
+            </header>
+            <div class="modal-body" id="modal-content">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
