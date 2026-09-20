@@ -43,7 +43,7 @@ resource "oci_core_security_list" "rag_agent_sl" {
     }
   }
 
-  # Streamlit
+  # FastAPI
   ingress_security_rules {
     protocol = "6"
     source   = var.allowed_app_cidr

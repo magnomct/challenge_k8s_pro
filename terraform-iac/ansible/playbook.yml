@@ -81,15 +81,16 @@
 
     - name: Sincronizar o código do projeto (backend + frontend) para o servidor
       ansible.posix.synchronize:
-        src: "/home/magno/chalenge_alura_one_pro/ansible/../"
+        src: "/home/magno/challenge_k8s_pro/"
         dest: "/home/ubuntu/rag_agent/"
         private_key: "/home/magno/.ssh/id_rsa"
         rsync_opts:
           - "--exclude=.git"
           - "--exclude=.venv"
           - "--exclude=__pycache__"
-          - "--exclude=terraform"
-          - "--exclude=ansible"
+          - "--exclude=terraform-iac"
+          - "--exclude=kubernetes"
+          - "--exclude=docs"
           - "--exclude=indice_faiss"
           - "--exclude=secrets"
           - "--exclude=.env"
@@ -127,11 +128,11 @@
         build: always
         state: present
 
-    - name: Aguardar o backend/frontend responder na porta configurada
+    - name: Aguardar o backend responder na porta configurada
       ansible.builtin.uri:
-        url: "http://localhost:{{ app_port }}/_stcore/health"
+        url: "http://localhost:8000/health"
         status_code: 200
       register: health_check
-      retries: 10
+      retries: 15
       delay: 5
       until: health_check.status == 200

@@ -74,9 +74,9 @@ variable "subnet_cidr" {
 }
 
 variable "app_port" {
-  description = "Porta em que o Streamlit responde"
+  description = "Porta TCP na qual a aplicacao (FastAPI) sera exposta."
   type        = number
-  default     = 8501
+  default     = 8000
 }
 
 variable "allowed_ssh_cidr" {
