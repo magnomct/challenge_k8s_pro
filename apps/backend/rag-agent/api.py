@@ -47,7 +47,7 @@ class AskRequest(BaseModel):
     session_id: str = Field(..., description="ID da sessão (retornado pelo upload)")
     question: str = Field(..., description="Pergunta em linguagem natural sobre o documento")
     model: str = Field(
-        "moonshotai/kimi-k3",
+        "meta/llama3-8b-instruct",
         description="Modelo de linguagem a usar",
     )
     k: int = Field(4, ge=2, le=8, description="Nº de trechos buscados")
@@ -176,7 +176,7 @@ async def health():
 async def upload_pdf(
     file: UploadFile = File(..., description="Arquivo PDF para processar"),
     model: str = Query(
-        "moonshotai/kimi-k3",
+        "meta/llama3-8b-instruct",
         description="Modelo de linguagem a usar",
     ),
     k: int = Query(4, ge=2, le=8, description="Nº de trechos buscados"),
