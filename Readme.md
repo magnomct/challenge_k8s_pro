@@ -6,7 +6,7 @@
 
 Agente de Inteligência Artificial que responde perguntas em linguagem natural sobre documentos internos da empresa (políticas, manuais, relatórios), usando **RAG (Retrieval-Augmented Generation)**. Projeto desenvolvido para o desafio **Alura/Oracle — Agente de IA com deploy na OCI**.
 
-**v2.0** — reestruturado com **FastAPI + Swagger**, **Kubernetes manifests**, e **painel de histórico de respostas**.
+**v2.0** — reestruturado com **FastAPI**, **Frontend visual (Chat e Dashboard Analítico)**, **Kubernetes manifests**, e persistência de histórico de respostas no PostgreSQL.
 
 ---
 
@@ -42,6 +42,7 @@ flowchart TD
 
 | Camada                     | Tecnologia                                               |
 | -------------------------- | -------------------------------------------------------- |
+| Frontend Visual            | HTML5, CSS3 (Glassmorphism), Vanilla JS, Chart.js        |
 | API REST + Swagger         | FastAPI (Swagger UI em `/docs`)                          |
 | Orquestração do agente     | LangChain (LCEL)                                         |
 | Modelo de linguagem        | NVIDIA Nemotron (via NVIDIA NIM / build.nvidia.com)      |
@@ -70,6 +71,7 @@ flowchart TD
 │           ├── loader.py                  # Leitura e chunking do PDF
 │           ├── vectorstore.py             # Índice FAISS
 │           ├── db.py                      # Persistência PostgreSQL + histórico
+│           ├── static/                    # Frontend (HTML, CSS, JS, Chart.js)
 │           ├── Dockerfile                 # Imagem da aplicação
 │           ├── requirements.txt           # Dependências Python
 │           └── db-init/
@@ -99,9 +101,11 @@ flowchart TD
 | GET    | `/health`  | Healthcheck (K8s probes)                            |
 | POST   | `/upload`  | Upload de PDF → indexação → retorna `session_id`    |
 | POST   | `/ask`     | Pergunta sobre o documento (requer `session_id`)    |
+| GET    | `/stats`   | Retorna estatísticas agregadas por dia para o gráfico |
 | GET    | `/history` | Painel de histórico de respostas (paginação/filtros) |
 
-**Swagger UI** — acesse `http://localhost:8000/docs` para testar todos os endpoints interativamente.
+**Interface Visual** — acesse `http://localhost:8000/` para a interface principal (Chat e Dashboard).  
+**Swagger UI** — acesse `http://localhost:8000/docs` para testar a API.
 
 ---
 
@@ -127,7 +131,9 @@ docker compose up -d --build
 docker compose ps   # aguarde "healthy" nos dois serviços
 ```
 
-Acesse **http://localhost:8000/docs** (Swagger UI).
+Acesse:
+- **Interface Principal:** [http://localhost:8000/](http://localhost:8000/) (Chat RAG e Dashboard)
+- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
@@ -208,22 +214,21 @@ ansible-playbook playbook.yml --ask-vault-pass
 
 ---
 
-## Painel de Histórico de Respostas
+## Painel Visual e Histórico
 
-O endpoint `GET /history` permite consultar todas as interações registradas:
+A aplicação conta com um **Frontend Visual** acessível na raiz (`/`):
+- **Interface de Chat:** Permite o upload interativo do PDF e conversação com respostas renderizadas e status de relevância (Dentro/Fora do Escopo).
+- **Dashboard Analítico:** Exibe as métricas de performance (Acurácia), e um **gráfico de barras (Chart.js)** mostrando a relação diária de acertos e erros.
+- **Tabela de Histórico:** Mostra as últimas interações e permite abrir um modal detalhado (pergunta, resposta, fontes consultadas e distância FAISS).
 
+O histórico completo continua acessível programaticamente via API:
 ```bash
-# Últimas 50 interações
+# Últimas interações
 curl http://localhost:8000/history
 
-# Filtrar por escopo
-curl "http://localhost:8000/history?in_scope=true&limit=20"
-
-# Filtrar por documento
-curl "http://localhost:8000/history?document=protocolo"
+# Estatísticas agregadas (para gráficos)
+curl http://localhost:8000/stats
 ```
-
-Cada registro inclui: pergunta, resposta, flag de escopo, distância do trecho mais próximo, fontes usadas e timestamp.
 
 ---
 
@@ -244,7 +249,8 @@ Cada registro inclui: pergunta, resposta, flag de escopo, distância do trecho m
 - ✅ Agente de IA responde perguntas em linguagem natural sobre o documento
 - ✅ Implantação na nuvem (OCI), acessível publicamente
 - ✅ Código organizado em módulos, com histórico de commits
+- ✅ Frontend Visual premium (Dashboard analítico com Chart.js e interface de Chat)
 - ✅ API REST com Swagger para teste (FastAPI `/docs`)
 - ✅ Manifests Kubernetes prontos para produção
-- ✅ Painel de histórico de respostas (`GET /history`)
+- ✅ Painel de histórico de respostas via API e Gráfico
 - ✅ README com arquitetura, exemplos de Q&A e instruções de execução
