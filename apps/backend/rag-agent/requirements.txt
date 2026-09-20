@@ -10,3 +10,5 @@ uvicorn[standard]
 python-multipart
 python-dotenv
 psycopg2-binary
+langchain-huggingface
+sentence-transformers
