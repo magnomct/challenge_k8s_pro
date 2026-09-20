@@ -52,7 +52,7 @@ class AskRequest(BaseModel):
     )
     k: int = Field(4, ge=2, le=8, description="Nº de trechos buscados")
     relevance_threshold: float = Field(
-        1.0, ge=0.1, le=2.0, description="Limiar de relevância (menor = mais rígido)"
+        1.8, ge=0.1, le=2.0, description="Limiar de relevância (menor = mais rígido)"
     )
 
 
