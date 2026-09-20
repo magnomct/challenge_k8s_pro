@@ -46,7 +46,7 @@ flowchart TD
 | API REST + Swagger         | FastAPI (Swagger UI em `/docs`)                          |
 | Orquestração do agente     | LangChain (LCEL)                                         |
 | Modelo de linguagem        | NVIDIA Nemotron (via NVIDIA NIM / build.nvidia.com)      |
-| Embeddings                 | NVIDIA `nv-embedqa-e5-v5`                                |
+| Embeddings                 | NVIDIA `llama-3.2-nv-embedqa-1b-v1`                      |
 | Índice vetorial            | FAISS                                                    |
 | Banco de dados             | PostgreSQL 16 (Alpine)                                   |
 | Containerização            | Docker + Docker Compose                                  |

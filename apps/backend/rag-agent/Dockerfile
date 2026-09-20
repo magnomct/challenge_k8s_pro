@@ -15,8 +15,9 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Agora sim o código da aplicação
+# Agora sim o código da aplicação e arquivos estáticos
 COPY loader.py vectorstore.py agent.py db.py api.py ./
+COPY static/ static/
 
 # Usuário não-root — boa prática de segurança em contêineres de produção
 RUN useradd --create-home --shell /bin/bash appuser \

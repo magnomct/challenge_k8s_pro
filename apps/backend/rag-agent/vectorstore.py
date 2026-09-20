@@ -2,7 +2,7 @@
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
 from langchain_community.vectorstores import FAISS
 
-EMBEDDING_MODEL_PADRAO = "nvidia/nv-embedqa-e5-v5"
+EMBEDDING_MODEL_PADRAO = "NV-Embed-QA"
 
 
 def construir_vectorstore(chunks, embedding_model: str = EMBEDDING_MODEL_PADRAO):
