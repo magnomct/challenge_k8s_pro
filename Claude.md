@@ -73,6 +73,49 @@ terraform plan
 terraform apply
 ```
 
+## Observabilidade (Prometheus + Grafana)
+
+A aplicação expõe métricas Prometheus em `/metrics` via `prometheus-fastapi-instrumentator`.
+
+### Dev local (Docker Compose)
+
+```bash
+# Subir stack completa incluindo observabilidade
+docker compose up -d --build
+
+# Endpoints de monitoramento
+# Métricas:   http://localhost:8000/metrics
+# Prometheus: http://localhost:9090
+# Grafana:    http://localhost:3000 (admin/admin)
+```
+
+### Métricas customizadas de negócio
+
+| Métrica | Tipo | Descrição |
+|---------|------|-----------|
+| `rag_uploads_total` | Counter | PDFs enviados |
+| `rag_questions_total{scope}` | Counter | Perguntas (in_scope/out_of_scope) |
+| `rag_response_latency_seconds` | Histogram | Latência do agente RAG |
+| `rag_faiss_distance` | Histogram | Melhor distância FAISS |
+
+### Kubernetes
+
+Manifests em `kubernetes/monitoring/`. O Prometheus descobre pods automaticamente via annotations:
+```yaml
+prometheus.io/scrape: "true"
+prometheus.io/port: "8000"
+prometheus.io/path: "/metrics"
+```
+
+## CI/CD (GitHub Actions)
+
+Workflows em `.github/workflows/`:
+
+- **`ci.yml`** — Push na `main`: Lint → Build → Push GHCR → Deploy OCI
+- **`pr-checks.yml`** — PRs: Lint → Build dry-run → Validate K8s manifests
+
+Imagem publicada em `ghcr.io/magnomct/rag-agent`.
+
 ## Kubernetes Conventions
 
 Full rules in `.claude/rules/kubernetes-manifests.md`. Key points:

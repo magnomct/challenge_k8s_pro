@@ -62,11 +62,11 @@ flowchart TD
 ```
 .
 ├── CLAUDE.md                              # Guia para agentes de IA (convenções, deploy)
-├── docker-compose.yml                     # Dev local: FastAPI + Postgres
+├── docker-compose.yml                     # Dev local: FastAPI + Postgres + Observabilidade
 ├── apps/                                  # Código fonte
 │   └── backend/
 │       └── rag-agent/
-│           ├── api.py                     # FastAPI (Swagger em /docs)
+│           ├── api.py                     # FastAPI (Swagger em /docs) + métricas Prometheus
 │           ├── agent.py                   # Chain RAG: prompt, escopo, checagem
 │           ├── loader.py                  # Leitura e chunking do PDF
 │           ├── vectorstore.py             # Índice FAISS
@@ -76,16 +76,32 @@ flowchart TD
 │           ├── requirements.txt           # Dependências Python
 │           └── db-init/
 │               └── 01_criar_tabela.sql    # Schema inicial
+├── monitoring/                            # Stack de observabilidade
+│   ├── prometheus/
+│   │   └── prometheus.yml                 # Config do Prometheus (scrape targets)
+│   └── grafana/
+│       ├── provisioning/                  # Auto-provisionamento (datasources + dashboards)
+│       └── dashboards/
+│           └── rag-agent-overview.json    # Dashboard pré-configurado
 ├── kubernetes/                            # Manifests K8s
 │   ├── kustomization.yaml
 │   ├── backend/
-│   │   ├── deployment.yaml
+│   │   ├── deployment.yaml                # + annotations prometheus.io/*
 │   │   ├── service.yaml
 │   │   └── pdb.yaml
-│   └── postgres/
-│       ├── statefulset.yaml
-│       ├── service.yaml
-│       └── configmap.yaml
+│   ├── postgres/
+│   │   ├── statefulset.yaml
+│   │   ├── service.yaml
+│   │   └── configmap.yaml
+│   └── monitoring/                        # Prometheus + Grafana no K8s
+│       ├── namespace.yaml
+│       ├── prometheus-configmap.yaml
+│       ├── prometheus-deployment.yaml
+│       ├── grafana-deployment.yaml
+│       └── grafana-*-configmap.yaml
+├── .github/workflows/                     # CI/CD
+│   ├── ci.yml                             # Build, Push, Deploy (main)
+│   └── pr-checks.yml                      # Validação de PRs
 ├── terraform-iac/                         # Infraestrutura OCI (Terraform)
 │   ├── ansible/                           # Playbooks de deploy
 │   └── ...
@@ -134,6 +150,77 @@ docker compose ps   # aguarde "healthy" nos dois serviços
 Acesse:
 - **Interface Principal:** [http://localhost:8000/](http://localhost:8000/) (Chat RAG e Dashboard)
 - **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Métricas Prometheus:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
+- **Prometheus Console:** [http://localhost:9090](http://localhost:9090)
+- **Grafana Dashboard:** [http://localhost:3000](http://localhost:3000) (login: admin/admin)
+
+---
+
+## Observabilidade (Prometheus + Grafana)
+
+A stack inclui monitoramento completo com **Prometheus** (coleta de métricas) e **Grafana** (visualização via dashboards).
+
+### Métricas expostas
+
+| Métrica | Tipo | Descrição |
+|---------|------|-----------|
+| `http_requests_total` | Counter | Total de requests HTTP (automática) |
+| `http_request_duration_seconds` | Histogram | Latência HTTP por endpoint (automática) |
+| `rag_uploads_total` | Counter | Total de PDFs enviados |
+| `rag_questions_total` | Counter | Perguntas por escopo (`in_scope` / `out_of_scope`) |
+| `rag_response_latency_seconds` | Histogram | Latência do agente RAG |
+| `rag_faiss_distance` | Histogram | Distância FAISS do melhor match |
+
+### Dashboard Grafana
+
+O dashboard **"RAG Agent — Overview"** é provisionado automaticamente com painéis:
+- Request rate por endpoint e status code
+- Latência P50/P95/P99
+- Uploads de PDF (total)
+- Perguntas in-scope vs out-of-scope (pie chart)
+- Latência do agente RAG
+- Distância FAISS
+- Conexões ativas do PostgreSQL
+
+### Componentes
+
+| Serviço | Imagem | Porta |
+|---------|--------|-------|
+| Prometheus | `prom/prometheus:v3.4.1` | 9090 |
+| Grafana | `grafana/grafana:11.6.0` | 3000 |
+| PostgreSQL Exporter | `prometheuscommunity/postgres-exporter:v0.17.1` | 9187 |
+
+---
+
+## CI/CD (GitHub Actions)
+
+O projeto possui dois pipelines automatizados:
+
+### Pipeline CI/CD (`ci.yml`) — branch `main`
+
+```
+Lint (ruff) → Build Docker → Push GHCR → Deploy (Ansible → OCI)
+```
+
+- **Lint:** Verifica formatação e linting com `ruff`
+- **Build & Push:** Constrói a imagem Docker e publica no GitHub Container Registry
+- **Deploy:** Executa o playbook Ansible para atualizar a VM na OCI
+
+### Pipeline PR Checks (`pr-checks.yml`) — Pull Requests
+
+- Lint Python (ruff)
+- Build Docker dry-run (sem push)
+- Validação dos manifests Kubernetes (`kubectl kustomize`)
+
+### GitHub Secrets necessários
+
+Para o deploy automático, configure os seguintes secrets no repositório:
+
+| Secret | Descrição |
+|--------|-----------|
+| `SSH_PRIVATE_KEY` | Chave privada SSH para acessar a VM OCI |
+| `OCI_HOST` | IP público da instância |
+| `VAULT_PASSWORD` | Senha do Ansible Vault |
 
 ---
 
@@ -253,4 +340,6 @@ curl http://localhost:8000/stats
 - ✅ API REST com Swagger para teste (FastAPI `/docs`)
 - ✅ Manifests Kubernetes prontos para produção
 - ✅ Painel de histórico de respostas via API e Gráfico
+- ✅ Observabilidade com Prometheus + Grafana (métricas, dashboards, alertas)
+- ✅ CI/CD com GitHub Actions (lint, build, push, deploy)
 - ✅ README com arquitetura, exemplos de Q&A e instruções de execução

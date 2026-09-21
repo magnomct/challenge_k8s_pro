@@ -1,0 +1,30 @@
+# prometheus.yml — Configuração do Prometheus para dev local
+# Coleta métricas da aplicação FastAPI, do PostgreSQL Exporter e de si mesmo.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Métricas do próprio Prometheus
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  # Métricas da aplicação FastAPI (endpoint /metrics)
+  - job_name: rag-agent
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - app:8000
+        labels:
+          service: rag-agent
+
+  # Métricas do PostgreSQL via postgres-exporter
+  - job_name: postgres
+    static_configs:
+      - targets:
+          - postgres-exporter:9187
+        labels:
+          service: postgres

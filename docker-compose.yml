@@ -1,9 +1,11 @@
 # docker-compose.yml — desenvolvimento local
-# Sobe o backend FastAPI + PostgreSQL com um único comando.
+# Sobe o backend FastAPI + PostgreSQL + stack de observabilidade com um único comando.
 #
 # Uso:
 #   docker compose up -d --build
-#   Swagger: http://localhost:8000/docs
+#   Swagger:    http://localhost:8000/docs
+#   Prometheus: http://localhost:9090
+#   Grafana:    http://localhost:3000 (admin/admin)
 
 services:
   postgres:
@@ -81,9 +83,91 @@ services:
     networks:
       - rag_network
 
+  # ---------------------------------------------------------------------------
+  # Observabilidade
+  # ---------------------------------------------------------------------------
+
+  prometheus:
+    image: prom/prometheus:v3.4.1
+    container_name: rag_agent_prometheus
+    restart: unless-stopped
+
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+
+    ports:
+      - "9090:9090"
+
+    depends_on:
+      - app
+
+    security_opt:
+      - no-new-privileges:true
+
+    networks:
+      - rag_network
+
+  grafana:
+    image: grafana/grafana:11.6.0
+    container_name: rag_agent_grafana
+    restart: unless-stopped
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      - prometheus
+
+    security_opt:
+      - no-new-privileges:true
+
+    networks:
+      - rag_network
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: rag_agent_postgres_exporter
+    restart: unless-stopped
+
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-rag_app}:${POSTGRES_PASSWORD:-local_dev_password}@postgres:5432/${POSTGRES_DB:-rag_agent}?sslmode=disable"
+
+    ports:
+      - "9187:9187"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    security_opt:
+      - no-new-privileges:true
+
+    networks:
+      - rag_network
+
 volumes:
   postgres_data:
     name: rag_agent_postgres_data
+  prometheus_data:
+    name: rag_agent_prometheus_data
+  grafana_data:
+    name: rag_agent_grafana_data
 
 networks:
   rag_network:

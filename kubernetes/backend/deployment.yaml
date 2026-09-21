@@ -29,6 +29,10 @@ spec:
         app.kubernetes.io/part-of: challenge-k8s-pro
         app.kubernetes.io/managed-by: kubectl
         environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
     spec:
       securityContext:
         runAsNonRoot: true

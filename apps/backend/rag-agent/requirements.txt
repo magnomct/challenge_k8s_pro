@@ -12,3 +12,5 @@ python-dotenv
 psycopg2-binary
 langchain-huggingface
 sentence-transformers
+prometheus-client
+prometheus-fastapi-instrumentator

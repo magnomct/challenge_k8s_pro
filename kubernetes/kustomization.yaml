@@ -8,6 +8,14 @@ resources:
   - backend/deployment.yaml
   - backend/service.yaml
   - backend/pdb.yaml
+  # Observabilidade (Prometheus + Grafana)
+  - monitoring/namespace.yaml
+  - monitoring/prometheus-configmap.yaml
+  - monitoring/prometheus-deployment.yaml
+  - monitoring/grafana-datasource-configmap.yaml
+  - monitoring/grafana-dashboard-configmap.yaml
+  - monitoring/grafana-dashboards-configmap.yaml
+  - monitoring/grafana-deployment.yaml
 
 images:
   - name: rag-agent

@@ -8,6 +8,7 @@ Rodar localmente:
 """
 import os
 import tempfile
+import time
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -19,6 +20,8 @@ from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import Counter, Histogram
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, Field
 
 import db
@@ -29,6 +32,33 @@ from vectorstore import construir_vectorstore
 # Carrega variáveis de um arquivo .env local (não tem efeito se o arquivo não existir;
 # em produção/K8s, as variáveis de ambiente vêm de ConfigMap/Secret).
 load_dotenv()
+
+# ---------------------------------------------------------------------------
+# Métricas Prometheus customizadas (negócio)
+# ---------------------------------------------------------------------------
+
+UPLOADS_TOTAL = Counter(
+    "rag_uploads_total",
+    "Total de PDFs enviados para indexação",
+)
+
+QUESTIONS_TOTAL = Counter(
+    "rag_questions_total",
+    "Total de perguntas feitas ao agente",
+    ["scope"],  # label: in_scope | out_of_scope
+)
+
+RESPONSE_LATENCY = Histogram(
+    "rag_response_latency_seconds",
+    "Latência do agente RAG ao responder uma pergunta",
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0],
+)
+
+FAISS_DISTANCE = Histogram(
+    "rag_faiss_distance",
+    "Melhor distância FAISS retornada na busca de similaridade",
+    buckets=[0.1, 0.3, 0.5, 0.7, 1.0, 1.2, 1.5, 1.8, 2.0, 2.5],
+)
 
 # ---------------------------------------------------------------------------
 # Modelos Pydantic (request/response) — geram o schema automático no Swagger
@@ -129,6 +159,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------------------------------------------------------------------
+# Instrumentação Prometheus (métricas HTTP automáticas + endpoint /metrics)
+# ---------------------------------------------------------------------------
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+
 # Sessões ativas: session_id -> {vectorstore, rag_chain, filename}
 _sessions: dict[str, dict] = {}
 
@@ -215,6 +251,9 @@ async def upload_pdf(
         "filename": file.filename,
     }
 
+    # Métrica: contabilizar upload
+    UPLOADS_TOTAL.inc()
+
     return UploadResponse(
         session_id=session_id,
         filename=file.filename,
@@ -237,6 +276,8 @@ async def ask_question(req: AskRequest):
             detail=f"Sessão '{req.session_id}' não encontrada. Faça upload de um PDF primeiro.",
         )
 
+    # Medir latência do agente RAG
+    start = time.perf_counter()
     resultado = responder(
         req.question,
         session["vectorstore"],
@@ -244,6 +285,14 @@ async def ask_question(req: AskRequest):
         k=req.k,
         limiar_distancia=req.relevance_threshold,
     )
+    elapsed = time.perf_counter() - start
+
+    # Métricas Prometheus
+    RESPONSE_LATENCY.observe(elapsed)
+    scope_label = "in_scope" if resultado["dentro_do_escopo"] else "out_of_scope"
+    QUESTIONS_TOTAL.labels(scope=scope_label).inc()
+    if resultado["melhor_distancia"] is not None:
+        FAISS_DISTANCE.observe(float(resultado["melhor_distancia"]))
 
     # Montar fontes para a resposta
     sources = []
