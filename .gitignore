@@ -26,3 +26,9 @@ ansible/group_vars/all/vault.yml
 test*.sh
 test*.py
 check_models.py
+
+# Segredos e chaves
+terraform-iac/terraform.tfvars
+terraform-iac/ansible/vault_pass.txt
+terraform-iac/ansible/group_vars/all/vault.yml
+apps/backend/rag-agent/list_models.py
