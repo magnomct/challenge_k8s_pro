@@ -32,3 +32,5 @@ terraform-iac/terraform.tfvars
 terraform-iac/ansible/vault_pass.txt
 terraform-iac/ansible/group_vars/all/vault.yml
 apps/backend/rag-agent/list_models.py
+terraform-iac/terraform.tfstate*
+test_embed.py
